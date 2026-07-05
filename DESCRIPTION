@@ -1,0 +1,74 @@
+Package: steinsampling
+Title: Kernel Stein Discrepancy Goodness-of-Fit and Stein Sampling Tools
+Version: 0.1.0
+Date: 2026-06-26
+Authors@R: c(
+    person("Junhao", "Gao",
+           email = "jug049@ucsd.edu",
+           role = c("aut", "cre")),
+    person("Ery", "Arias-Castro",
+           email = "eariascastro@ucsd.edu",
+           role = "aut")
+    )
+Maintainer: Junhao Gao <jug049@ucsd.edu>
+Description: Provides three Stein-discrepancy goodness-of-fit tests and several
+    Stein-method-based sampling methods. The kernel Stein discrepancy (KSD)
+    U-statistic test ('ksd_u_test.R') and KSD V-statistic test ('ksd_v_test.R')
+    check whether samples match a target distribution,
+    following Liu et al. (2016) <arXiv:1602.03253> and Chwialkowski et al.
+    (2016) <arXiv:1602.02964>. The finite set Stein discrepancy (FSSD) test
+    ('fssd_test.R') is a linear time goodness-of-fit test following
+    Jitkrittum et al. (2017) <arXiv:1705.07673>. The sampling tools include
+    Stein thinning ('stein_thinning.R') for selecting representative samples
+    following Riabiz et al. (2022) <arXiv:2005.03952>, Stein Points
+    ('stein_points.R') for constructing representative point sets following
+    Chen et al. (2018) <arXiv:1803.10161>, Stein Point Markov chain Monte Carlo
+    ('stein_point_mcmc.R') for MCMC-based Stein point selection following Chen
+    et al. (2019) <arXiv:1905.03673>, and Stein variational gradient descent
+    ('svgd.R') for deterministic particle-based variational inference following
+    Liu and Wang (2016) <arXiv:1608.04471>. Gaussian mixture model (GMM)
+    utilities ('gmm_model.R') create mixtures, draw samples, perturb component
+    means, compute likelihoods, posterior component probabilities and score
+    functions, and plot one-dimensional samples.
+URL: https://github.com/junhao7622/Stein_Sampling
+BugReports: https://github.com/junhao7622/Stein_Sampling/issues
+Config/steinsampling/replication-data:
+    Replication scripts are kept out of the CRAN testthat suite and stored in
+    inst/replication/ in the source tree. Supporting size-limited data excerpts
+    are stored in inst/replication/data/. After package installation, these
+    files are available under system.file("replication", package =
+    "steinsampling") and system.file("replication", "data", package =
+    "steinsampling"). These scripts call the package through exported
+    steinsampling functions. Complete external data sources are: LIBSVM Covertype
+    <https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/covtype.libsvm.binary.scale.bz2>
+    for 'covtype.libsvm.binary.scale.bz2' and its derived dense RDS file;
+    Harvard Dataverse Goodwin/RW 'theta.csv'
+    <https://dataverse.harvard.edu/api/access/datafile/4807844> and 'grad.csv'
+    <https://dataverse.harvard.edu/api/access/datafile/4807838>; and SP-MCMC
+    S&P 500 'data_spx.mat'
+    <https://raw.githubusercontent.com/wilson-ye-chen/sp-mcmc/master/src/lib/data_spx.mat>.
+License: GPL (>= 2)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends: R (>= 4.0)
+Imports: stats, graphics, MASS, mvtnorm
+Suggests: Rcpp, RcppArmadillo, BH, Matrix, data.table, dplyr, doParallel,
+    doRNG, foreach, ggplot2, goftest, dgof, pROC, randtoolbox, rngWELL,
+    testthat, tidyr, transport, withr
+Collate:
+    'steinsampling-package.R'
+    'stein_helpers.R'
+    'kernel_classes.R'
+    'bootstrap.R'
+    'gmm_model.R'
+    'ksd_u_test.R'
+    'ksd_v_test.R'
+    'fssd_test.R'
+    'svgd.R'
+    'stein_thinning.R'
+    'stein_points.R'
+    'stein_point_mcmc.R'
+Config/testthat/edition: 3
+NeedsCompilation: no
+Config/roxygen2/version: 8.0.0
+Repository: CRAN
