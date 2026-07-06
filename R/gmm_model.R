@@ -21,11 +21,10 @@
 #' model <- gmm(nComp = 3)
 #'
 #' # 3-d Gaussian mixture model with 3 components, with specified mu,sigma and weights
-#' mu <- matrix(c(1,2,3,2,3,4,5,6,7),ncol=3)
-#' sigma <- array(diag(3),c(3,3,3))
-#' model <- gmm(nComp = 3, mu = mu, sigma=sigma, weights = c(0.2,0.4,0.4), d = 3)
-
-gmm <- function(nComp=NULL, mu=NULL, sigma=NULL, weights=NULL, d=NULL){
+#' mu <- matrix(c(1, 2, 3, 2, 3, 4, 5, 6, 7), ncol = 3)
+#' sigma <- array(diag(3), c(3, 3, 3))
+#' model <- gmm(nComp = 3, mu = mu, sigma = sigma, weights = c(0.2, 0.4, 0.4), d = 3)
+gmm <- function(nComp = NULL, mu = NULL, sigma = NULL, weights = NULL, d = NULL) {
   # NOTE: set.seed(0) intentionally removed.
   # Hardcoding set.seed() inside a function that is called from parallel
   # workers (foreach / doRNG) resets every worker's RNG state on every call,
@@ -33,51 +32,51 @@ gmm <- function(nComp=NULL, mu=NULL, sigma=NULL, weights=NULL, d=NULL){
   # silently fail or return garbage.  Callers are responsible for seeding.
   #
   # Generate a default Gaussian Mixture Model
-  if(is.null(nComp)){
+  if (is.null(nComp)) {
     d <- 1; k <- 5
     mu <- 10 * runif(k)
     mu <- mu - mean(mu)
 
-    sigma <- array(diag(d),c(d,d,k));
-  }else{
+    sigma <- array(diag(d), c(d, d, k));
+  } else {
     k <- nComp
   }
-  
+
   # Case when mean is not specified
-  if(is.null(mu)){
-    if(is.null(d)) d <- 1
-    
-    mu <- 10 * replicate(k,runif(d))
+  if (is.null(mu)) {
+    if (is.null(d)) d <- 1
+
+    mu <- 10 * replicate(k, runif(d))
     mu <- mu - mean(mu)
-    
+
   }
-  
+
   # Case when sigma is not specified
-  if(is.null(sigma)){
-    if(is.null(d)){
+  if (is.null(sigma)) {
+    if (is.null(d)) {
       d <- dim(mu)[1]
     }
-    
-    sigma <- array(diag(d),c(d,d,k));
+
+    sigma <- array(diag(d), c(d, d, k));
   }
-  
-  #If sigma is one-dimensional
-  if(is.null(dim(sigma))){
-    sigma <- array(sigma, c(1,1,k))
+
+  # If sigma is one-dimensional
+  if (is.null(dim(sigma))) {
+    sigma <- array(sigma, c(1, 1, k))
   }
-  
+
   # Handle the cases for the weights
-  if(is.null(weights)){
-    weights = rep(1,k) / k
-  }else if(sum(weights < 0) > 1){
+  if (is.null(weights)) {
+    weights = rep(1, k) / k
+  } else if (sum(weights < 0) > 1) {
     stop('Non-positive weights')
-  }else if(sum(weights) != 1){
+  } else if (sum(weights) != 1) {
     weights <- weights / sum(weights)
   }
-  
-  model <- list("nComp"=k, "mu" = mu, "sigma" = sigma,
-                "weights" = weights, "d"=d)
-  
+
+  model <- list("nComp" = k, "mu" = mu, "sigma" = sigma,
+                "weights" = weights, "d" = d)
+
   return(model)
 }
 
@@ -91,35 +90,33 @@ gmm <- function(nComp=NULL, mu=NULL, sigma=NULL, weights=NULL, d=NULL){
 #' @export
 #'
 #' @examples
-#' #Generate 100 samples from default gaussian mixture model
+#' # Generate 100 samples from default gaussian mixture model
 #' model <- gmm()
 #' X <- rgmm(model)
 #'
-#' #Generate 300 samples from 3-d gaussian mixture model
-#' model <- gmm(d=3)
-#' X <- rgmm(model,n=300)
-
-
-rgmm <- function(model = NULL,n=100){
-  if(is.null(model)){
+#' # Generate 300 samples from 3-d gaussian mixture model
+#' model <- gmm(d = 3)
+#' X <- rgmm(model, n = 300)
+rgmm <- function(model = NULL, n = 100) {
+  if (is.null(model)) {
     stop('Supply GMM Model')
-  }else{
+  } else {
     k <- model$nComp
     mu <- model$mu
     sigma <- model$sigma
     weights <- model$weights
     d <- model$d
-    
-    components <- sample(1:k,prob=weights,size=n,replace=TRUE)
-    
+
+    components <- sample(1:k, prob = weights, size = n, replace = TRUE)
+
     # 1 Dimensional case
-    if(d == 1){
-      stdev <- rep(0,k)
-      for(i in 1:k){
-        stdev[i] <- sqrt(sigma[,,i])
+    if (d == 1) {
+      stdev <- rep(0, k)
+      for (i in 1:k) {
+        stdev[i] <- sqrt(sigma[, , i])
       }
-      data <- rnorm(n=n,mean=mu[components],sd=stdev[components])
-    }else{
+      data <- rnorm(n = n, mean = mu[components], sd = stdev[components])
+    } else {
       # Multidimensional Case
       if (!requireNamespace("mvtnorm", quietly = TRUE)) {
         stop("mvtnorm needed for this demo to work. Please install it.",
@@ -137,7 +134,7 @@ rgmm <- function(model = NULL,n=100){
         }
       }
     }
-    
+
     return(data)
     # hcum <- h <- hist(data,breaks=30,plot=FALSE)
     # hcum$counts <- cumsum(hcum$counts)
@@ -155,21 +152,20 @@ rgmm <- function(model = NULL,n=100){
 #' @export
 #'
 #' @examples
-#' #Add noise to default 1-d gaussian mixture model
+#' # Add noise to default 1-d gaussian mixture model
 #' model <- gmm()
 #' noisymodel <- perturbgmm(model)
-
-perturbgmm <- function(model = NULL){
-  if(is.null(model)){
+perturbgmm <- function(model = NULL) {
+  if (is.null(model)) {
     stop('Supply GMM Model')
   }
   # NOTE: set.seed(0) intentionally removed — same reason as gmm().
   k <- model$nComp
   d <- model$d
-  noise <- replicate(k,rnorm(d))
+  noise <- replicate(k, rnorm(d))
   perturbed_mu <- model$mu + noise
-  perturbed_model <- gmm(k,perturbed_mu,model$sigma, model$weights,d)
-  
+  perturbed_model <- gmm(k, perturbed_mu, model$sigma, model$weights, d)
+
   return(perturbed_model)
 }
 
@@ -322,26 +318,26 @@ gmm_log_component_densities <- function(model, X) {
 #' X <- rgmm(model, n = 5)
 #' posteriorgmm(model, X)
 #' @export
-posteriorgmm <- function(model=NULL, X=NULL){
-  if(is.null(model) || is.null(X)){
+posteriorgmm <- function(model = NULL, X = NULL) {
+  if (is.null(model) || is.null(X)) {
     stop('Supply Model and Data')
   }
-  
+
   weights <- model$weights
   log_comp <- gmm_log_component_densities(model, X)
   log_w <- log(as.numeric(weights))
   log_joint <- sweep(log_comp, 2, log_w, "+")
-  
+
   row_max <- apply(log_joint, 1, max, na.rm = TRUE)
   is_inf_row <- is.infinite(row_max) & row_max < 0
-  post <- matrix(0, nrow=nrow(log_joint), ncol=ncol(log_joint))
+  post <- matrix(0, nrow = nrow(log_joint), ncol = ncol(log_joint))
   valid <- !is_inf_row
-  
-  if(any(valid)) {
-    shifted <- log_joint[valid, , drop=FALSE] - row_max[valid]
+
+  if (any(valid)) {
+    shifted <- log_joint[valid, , drop = FALSE] - row_max[valid]
     post[valid, ] <- exp(shifted) / rowSums(exp(shifted))
   }
-  if(any(is_inf_row)) {
+  if (any(is_inf_row)) {
     post[is_inf_row, ] <- 1 / model$nComp
   }
   return(post)
@@ -363,11 +359,11 @@ posteriorgmm <- function(model=NULL, X=NULL){
 #' # and dataset generated from it
 #' model <- gmm()
 #' X <- rgmm(model)
-#' p <- likelihoodgmm(model=model, X=X)
-likelihoodgmm <- function(model=NULL, X=NULL){
-  if(is.null(model) || is.null(X)){
+#' p <- likelihoodgmm(model = model, X = X)
+likelihoodgmm <- function(model = NULL, X = NULL) {
+  if (is.null(model) || is.null(X)) {
     stop('Supply Model and Data')
-  }else{
+  } else {
     weights <- model$weights
 
     log_comp <- gmm_log_component_densities(model, X)
@@ -375,7 +371,7 @@ likelihoodgmm <- function(model=NULL, X=NULL){
     log_joint <- sweep(log_comp, 2, log_w, "+")
     sum_prob <- exp(row_logsumexp(log_joint))
   }
-  
+
   return(sum_prob)
 }
 
@@ -396,25 +392,25 @@ likelihoodgmm <- function(model=NULL, X=NULL){
 #' # Compute score for a given gaussianmixture model and dataset
 #' model <- gmm()
 #' X <- rgmm(model)
-#' score <- scorefunctiongmm(model=model, X=X)
-scorefunctiongmm <- function(model=NULL, X=NULL){
-  if(is.null(model) || is.null(X)){
+#' score <- scorefunctiongmm(model = model, X = X)
+scorefunctiongmm <- function(model = NULL, X = NULL) {
+  if (is.null(model) || is.null(X)) {
     stop('Supply Model and Data')
-  }else{
+  } else {
     P <- posteriorgmm(model, X)
     d <- model$d
     precision_cache <- build_precision_cache(model)
-    if(d == 1){
+    if (d == 1) {
       n <- length(X)
       x_mat <- matrix(as.numeric(X), ncol = 1)
-    }else{
+    } else {
       n <- dim(X)[1]
       x_mat <- as.matrix(X)
     }
-    
+
     score <- matrix(0, nrow = n, ncol = d)
-    
-    for(component_idx in 1:model$nComp){
+
+    for (component_idx in 1:model$nComp) {
       mean_k <- get_component_mean(model, component_idx)
       if (d == 1) {
         diff <- x_mat[, 1] - mean_k
@@ -424,10 +420,10 @@ scorefunctiongmm <- function(model=NULL, X=NULL){
         comp_score <- -diff %*% precision_cache[[component_idx]]
       }
       score <- score + comp_score * P[, component_idx]
-      
+
     }
   }
-  
+
   return(score)
 }
 
@@ -445,24 +441,25 @@ scorefunctiongmm <- function(model=NULL, X=NULL){
 #' # Plot pdf histogram for a given dataset
 #' model <- gmm()
 #' X <- rgmm(model)
-#' plotgmm(data=X)
+#' plotgmm(data = X)
 #'
 #' # Plot pdf histogram for a given dataset, with lines that indicate the mean
 #' model <- gmm()
 #' mu <- model$mu
 #' X <- rgmm(model)
-#' plotgmm(data=X, mu=mu)
-plotgmm <- function(data, mu = NULL){
-  hcum <- h <- hist(data,breaks=30,plot=FALSE)
+#' plotgmm(data = X, mu = mu)
+plotgmm <- function(data, mu = NULL) {
+  hcum <- h <- hist(data, breaks = 30, plot = FALSE)
   hcum$counts <- cumsum(hcum$counts)
-  
-  ##----- Plot only pdf----------------
-  par(mar=c(1,1,1,1))
-  plot(h, xlim = c(-20,20),col="grey")
+
+  ## ----- Plot only pdf----------------
+  old_par <- par(mar = c(1, 1, 1, 1))
+  on.exit(par(old_par), add = TRUE)
+  plot(h, xlim = c(-20, 20), col = "grey")
   d <- density(data)
-  lines(x = d$x, y = d$y  * length(data) * diff(h$breaks)[1], lwd = 2)
-  if(!is.null(mu)){
-    abline(v = mu,col = "royalblue",lwd = 2)
+  lines(x = d$x, y = d$y * length(data) * diff(h$breaks)[1], lwd = 2)
+  if (!is.null(mu)) {
+    abline(v = mu, col = "royalblue", lwd = 2)
   }
 }
 
@@ -488,16 +485,16 @@ plotgmm <- function(data, mu = NULL){
 #' grad_log_prob <- get_score_evaluator(model)
 #' X <- rgmm(model)
 #' G <- grad_log_prob(X)
-get_score_evaluator <- function(model){
+get_score_evaluator <- function(model) {
   precision_cache <- build_precision_cache(model)
 
-  function(X){
+  function(X) {
     d <- model$d
 
-    if(is.null(dim(X))){
-      if(d == 1){
+    if (is.null(dim(X))) {
+      if (d == 1) {
         X_mat <- matrix(X, ncol = 1)
-      }else{
+      } else {
         X_mat <- matrix(X, nrow = 1)
       }
     } else {
