@@ -13,6 +13,19 @@ test_that("gmm() stores one-dimensional mixture metadata", {
   expect_equal(sum(model$weights), 1)
 })
 
+test_that("gmm() rejects negative mixture weights", {
+  expect_error(
+    gmm(
+      nComp = 2,
+      mu = c(-1, 1),
+      sigma = array(1, c(1, 1, 2)),
+      weights = c(-0.2, 1.2),
+      d = 1
+    ),
+    "Non-positive weights"
+  )
+})
+
 test_that("rgmm() and perturbgmm() return finite mixture samples", {
   set.seed(1)
   model <- gmm(
