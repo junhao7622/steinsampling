@@ -1,14 +1,18 @@
 # gmm_model.R
 
-#' Returns a Gaussian Mixture Model
+#' Create a Gaussian mixture model
 #'
-#' @param nComp (scalar) : number of components
-#' @param mu (d by k): mean of each component
-#' @param sigma (d by d by k): covariance of each component
-#' @param weights (1 by k) : mixing weight of each proportion (optional)
-#' @param d : number of dimensions of vector (optional)
+#' Builds a simple Gaussian mixture model object for simulations and examples.
 #'
-#' @return model : A Gaussian Mixture Model generated from the given parameters
+#' @param nComp Number of mixture components. If `NULL`, a five-component
+#'   one-dimensional mixture is generated.
+#' @param mu Component means, stored as a `d x nComp` matrix.
+#' @param sigma Component covariance matrices, stored as a `d x d x nComp`
+#'   array. A vector is treated as one-dimensional variances.
+#' @param weights Optional mixture weights. Values are normalized to sum to one.
+#' @param d Dimension of each sample. Used when `mu` or `sigma` is generated.
+#'
+#' @return A list describing the Gaussian mixture model.
 #'
 #'
 #' @export
@@ -68,7 +72,7 @@ gmm <- function(nComp = NULL, mu = NULL, sigma = NULL, weights = NULL, d = NULL)
   # Handle the cases for the weights
   if (is.null(weights)) {
     weights = rep(1, k) / k
-  } else if (sum(weights < 0) > 1) {
+  } else if (any(weights < 0)) {
     stop('Non-positive weights')
   } else if (sum(weights) != 1) {
     weights <- weights / sum(weights)
@@ -80,13 +84,14 @@ gmm <- function(nComp = NULL, mu = NULL, sigma = NULL, weights = NULL, d = NULL)
   return(model)
 }
 
-#' Generates dataset from Gaussian Mixture Model
+#' Sample from a Gaussian mixture model
 #' @note Requires library mvtnorm
 #'
-#' @param model : Gaussian Mixture Model defined by gmm()
-#' @param n : number of samples desired
+#' @param model Gaussian mixture model returned by [gmm()].
+#' @param n Number of samples to draw.
 #'
-#' @return data (n by d): Random dataset generated from given the Gaussian Mixture Model
+#' @return A numeric vector for one-dimensional mixtures, or an `n x d` matrix
+#'   for multivariate mixtures.
 #' @export
 #'
 #' @examples
@@ -142,11 +147,14 @@ rgmm <- function(model = NULL, n = 100) {
 }
 
 
-#' Returns a perturbed model of given GMM
+#' Perturb the component means of a Gaussian mixture model
 #'
-#' @param model : The base Gaussian Mixture Model
+#' Adds independent standard normal noise to each component mean while keeping
+#' the covariances and weights unchanged.
 #'
-#' @return perturbedModel : Perturbed model with added noise to the supplied GMM
+#' @param model Gaussian mixture model returned by [gmm()].
+#'
+#' @return A Gaussian mixture model with perturbed component means.
 #'
 #'
 #' @export
@@ -169,11 +177,11 @@ perturbgmm <- function(model = NULL) {
   return(perturbed_model)
 }
 
-#' Row-wise log-sum-exp.
+#' Compute row-wise log-sum-exp values
 #'
 #' @param log_mat Numeric matrix of log values.
 #'
-#' @return Numeric vector of row-wise log-sum-exp values.
+#' @return Numeric vector, one value per row of `log_mat`.
 #' @examples
 #' row_logsumexp(matrix(c(0, 1, 2, 3), nrow = 2))
 #' @export
@@ -183,7 +191,7 @@ row_logsumexp <- function(log_mat) {
   row_max + log(rowSums(exp(shifted)))
 }
 
-#' Extract a Gaussian mixture component mean
+#' Extract a component mean from a Gaussian mixture model
 #'
 #' @param model Gaussian mixture model returned by [gmm()].
 #' @param component_idx Component index.
@@ -242,17 +250,17 @@ safe_precision_matrix <- function(sigma, ridge = 1e-6, cond_threshold = 1e10) {
   qr.solve(sigma_reg, diag(d))
 }
 
-#' Build precision matrices for Gaussian mixture components
+#' Build inverse covariance matrices for mixture components
 #'
-#' Computes one inverse covariance matrix per component, with ridge
-#' regularization for ill-conditioned covariance matrices.
+#' Computes one inverse covariance matrix per component. If a covariance matrix
+#' is nearly singular, a small ridge term is added before inversion.
 #'
 #' @param model Gaussian mixture model returned by [gmm()].
 #' @param ridge Positive ridge value used when regularization is needed.
 #' @param cond_threshold Condition-number threshold above which ridge
 #'   regularization is applied.
 #'
-#' @return A list of precision matrices, one per mixture component.
+#' @return A list of inverse covariance matrices, one per mixture component.
 #' @export
 build_precision_cache <- function(model, ridge = 1e-6, cond_threshold = 1e10) {
   lapply(seq_len(model$nComp), function(component_idx) {
@@ -307,12 +315,13 @@ gmm_log_component_densities <- function(model, X) {
   log_comp
 }
 
-#' Calculate posterior component probabilities for a GMM
+#' Compute posterior component probabilities for a Gaussian mixture
 #'
 #' @param model Gaussian mixture model created by `gmm()`.
 #' @param X Numeric vector or matrix of samples.
 #'
-#' @return Matrix of posterior component probabilities.
+#' @return Matrix whose `(i, k)` entry is the posterior probability that sample
+#'   `i` came from component `k`.
 #' @examples
 #' model <- gmm()
 #' X <- rgmm(model, n = 5)
@@ -343,13 +352,12 @@ posteriorgmm <- function(model = NULL, X = NULL) {
   return(post)
 }
 
-#' Calculates the likelihood for a given dataset for a GMM
+#' Compute the mixture density for samples
 #'
-#' @param model : The Gaussian Mixture Model
-#' @param X (n by d): The dataset of interest,
-#' where n is the number of samples and d is the dimension
+#' @param model Gaussian mixture model returned by [gmm()].
+#' @param X Numeric vector or matrix of samples.
 #'
-#' @return P (n by k) : The likelihood of each dataset belonging to each of the k component
+#' @return Numeric vector of mixture density values, one per sample.
 #'
 #'
 #' @export
@@ -376,14 +384,14 @@ likelihoodgmm <- function(model = NULL, X = NULL) {
 }
 
 
-#' Score function for given GMM : calculates score function dlogp(x)/dx
-#' for a given Gaussian Mixture Model
+#' Compute the score of a Gaussian mixture density
 #'
-#' @param model : The Gaussian Mixture Model
-#' @param X (n by d): The dataset of interest,
-#' where n is the number of samples and d is the dimension
+#' The score is the gradient of the log mixture density with respect to `x`.
 #'
-#' @return y : The score computed by the given function
+#' @param model Gaussian mixture model returned by [gmm()].
+#' @param X Numeric vector or matrix of samples.
+#'
+#' @return Numeric matrix with one score vector per sample.
 #'
 #'
 #' @export
@@ -428,11 +436,13 @@ scorefunctiongmm <- function(model = NULL, X = NULL) {
 }
 
 
-#' Plots histogram for 1-d GMM given the dataset
+#' Plot a one-dimensional Gaussian mixture sample
 #'
-#' @param data (n by 1): The dataset of interest,
-#' where n is the number of samples.
-#' @param mu : True mean of the GMM (optional)
+#' Draws a histogram with a kernel density overlay. Optional component means
+#' are shown as vertical reference lines.
+#'
+#' @param data Numeric vector of one-dimensional samples.
+#' @param mu Optional component means to mark on the plot.
 #'
 #'
 #' @export
@@ -464,19 +474,16 @@ plotgmm <- function(data, mu = NULL) {
 }
 
 
-#' Returns a score evaluator closure for a fixed GMM
+#' Create a score function for a fixed Gaussian mixture model
 #'
-#' This helper exposes a generated GMM model through interfaces that require
-#' `grad_log_prob` with signature `f(X)`.
+#' Returns a function of `X` only, ready to pass to routines that need a score
+#' function.
 #'
-#' @param model : Gaussian Mixture Model defined by gmm()
+#' @param model Gaussian mixture model returned by [gmm()].
 #'
-#' @return A function that takes only `X` and returns gradients of log-density.
-#' If `X` is a vector (no `dim`) and `model$d == 1`, it is treated as a batch
-#' of 1-D samples and the returned gradient is a vector of the same length.
-#' If `X` is a vector and `model$d > 1`, it is treated as a single sample in
-#' `d` dimensions and the returned gradient is a vector of length `d`.
-#' If `X` is a matrix, the returned gradient is a matrix.
+#' @return A function that returns gradients of the log density. Vectors are
+#'   handled naturally: a vector is a batch of one-dimensional samples when
+#'   `model$d == 1`, and one multivariate sample when `model$d > 1`.
 #'
 #' @export
 #'
