@@ -1,0 +1,25 @@
+citHeader("To cite steinsampling in publications, please use:")
+
+bibentry(
+  bibtype = "Misc",
+  key = "gao2026kernelizedsteindiscrepancygoodnessoffit",
+  title = paste(
+    "Kernelized Stein Discrepancy for Goodness-of-Fit Tests",
+    "and Stein Sampling in R"
+  ),
+  author = c(
+    person("Junhao", "Gao"),
+    person("Ery", "Arias-Castro")
+  ),
+  year = "2026",
+  eprint = "2608.26450",
+  archivePrefix = "arXiv",
+  primaryClass = "stat.CO",
+  url = "https://arxiv.org/abs/2608.26450",
+  textVersion = paste(
+    "Gao, J. and Arias-Castro, E. (2026).",
+    "Kernelized Stein Discrepancy for Goodness-of-Fit Tests and",
+    "Stein Sampling in R. arXiv:2608.26450 [stat.CO].",
+    "https://arxiv.org/abs/2608.26450."
+  )
+)
